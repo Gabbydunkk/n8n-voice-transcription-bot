@@ -1,0 +1,449 @@
+{
+  "name": "VOICE BOT",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "condition1",
+              "leftValue": "={{ $json.message.voice }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e2af4660-e3f6-499a-a077-9249d0e72523",
+      "name": "Check if Voice Message",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -380,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Send Telegram Message').first().json.message.chat.id }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "reply_to_message_id": "={{ $('Send Telegram Message').first().json.message.message_id }}"
+        }
+      },
+      "id": "165a6a62-86fd-44d5-a450-e8949bd1e602",
+      "name": "Send Transcription",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        -60
+      ],
+      "webhookId": "d8b09d80-d1bb-44b7-8771-95ed0d25032b",
+      "credentials": {
+        "telegramApi": {
+          "id": "NfnniHrIRwmvgrwk",
+          "name": "My Voice Bot Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "Please send a voice message to transcribe.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "091ad9bc-2af3-4833-8d18-1f74179d40bc",
+      "name": "Send Help Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -120,
+        160
+      ],
+      "webhookId": "ec0d6bb7-4288-4ae6-97b1-52388abf695f",
+      "credentials": {
+        "telegramApi": {
+          "id": "NfnniHrIRwmvgrwk",
+          "name": "My Voice Bot Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-maverick-17b-128e-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        520,
+        140
+      ],
+      "id": "2f2be86f-1b7e-485b-af3f-8d0c27bf2ef5",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "OPYiXOUWC1Qol14D",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "c0fb96e0-a013-49a0-9c03-a86b2cb354ee",
+      "name": "Send Telegram Message",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        40
+      ],
+      "webhookId": "telegram-webhook-id",
+      "credentials": {
+        "telegramApi": {
+          "id": "NfnniHrIRwmvgrwk",
+          "name": "My Voice Bot Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "eb23bb9f-6c73-44fe-999f-e2335f0685d8",
+              "name": "Voice Message",
+              "value": "={{ $json.message.voice }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -120,
+        -60
+      ],
+      "id": "655713e9-40e0-4e11-8a15-af481cbba0d3",
+      "name": "Extract Voice Message"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Send Telegram Message').item.json.message.voice.file_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        100,
+        -60
+      ],
+      "id": "23737a06-e58c-43c1-996f-3bf1809701b6",
+      "name": "Download Voice Message",
+      "webhookId": "7c211350-42a7-4793-9b80-ea84abbebf8c",
+      "credentials": {
+        "telegramApi": {
+          "id": "NfnniHrIRwmvgrwk",
+          "name": "My Voice Bot Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code node to change file extension from .oga to .ogg\nconst inputData = items[0].binary.data;\n\n// Create new binary data with .ogg extension\nconst newBinaryData = {\n  ...inputData,\n  fileName: inputData.fileName ? inputData.fileName.replace('.oga', '.ogg') : 'voice.ogg',\n  fileExtension: 'ogg'\n};\n\nreturn [\n  {\n    json: items[0].json,\n    binary: {\n      data: newBinaryData\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        140,
+        160
+      ],
+      "id": "65412caf-dad4-4a71-ad2c-1b005e25d12e",
+      "name": "Convert .oga to .ogg"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "groqApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "=file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "model",
+              "value": "whisper-large-v3-turbo"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "0be096f6-1661-4b6a-a25e-1b1ad66cbea2",
+      "name": "Transcribe with Groq",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        340,
+        160
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "OPYiXOUWC1Qol14D",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9a0be986-4386-49d0-bb68-9db2692bd538",
+              "name": "Transcribed Text",
+              "value": "={{ $json.data }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        340,
+        -60
+      ],
+      "id": "948014f8-e7a6-4c92-a7af-bfd0f89c6436",
+      "name": "Extract Transcribed Text"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=This is the Raw Transcribed Data that is to be further cleaned:\n {{ $json['Transcribed Text'] }}",
+        "options": {
+          "systemMessage": "# System Prompt for Transcription Cleanup Agent\n\nYou are a transcription cleanup specialist. Your job is to process raw transcription data and return only clean, professional text.\n\n## Your Task:\n1. Extract ONLY the transcribed text from the input data\n2. Remove all technical metadata, IDs, and API response data\n3. Clean up the text to make it professional and readable\n4. Return ONLY the clean text, nothing else\n\n## Input Format:\nYou will receive JSON data that contains transcribed text along with technical metadata like:\n- API request IDs\n- Groq embeddings\n- System metadata\n- JSON formatting\n\n## Output Format:\nReturn ONLY the clean transcribed text as plain text. Do not include:\n- No JSON formatting\n- No technical IDs\n- No metadata\n- No explanations\n- No additional commentary\n\n## Text Improvements:\nWhile cleaning, also:\n- Fix obvious grammar issues\n- Capitalize properly\n- Add appropriate punctuation\n- Remove excessive spaces\n- Make the text flow naturally\n\n## Example:\nInput: `{\"text\":\" Hi, so what you are doing today?\",\"x_groq\":{\"id\":\"req_01jwz2nv0mepqry2xdz2vsxxvr\"}}`\n\nOutput: `Hi, so what are you doing today?`\n\nRemember: Return ONLY the cleaned text, nothing more."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        540,
+        -60
+      ],
+      "id": "70f0afb1-58c7-4ebb-946a-176682e0494c",
+      "name": "Cleaning Agent"
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        520,
+        300
+      ],
+      "id": "9672fb40-6cf8-4005-a70a-e9776ccb2195",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "OPYiXOUWC1Qol14D",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# Persona: Gabby, the Professional AI Assistant\nYou are a sophisticated AI designed to assist users by providing accurate and well-structured information. You are helpful, professional, and approachable.\n\n# Core Task:\nAnalyze the user's transcribed voice message below and provide a high-quality response based on the following rules.\n\n# Rules of Engagement:\n1.  **Be Concise:** Answer the user's question directly. Avoid unnecessary chatter.\n2.  **Acknowledge Your Nature:** If relevant, remind the user you are an AI. Do not invent personal opinions or experiences (e.g., \"I feel...\", \"When I was...\").\n3.  **Handle Ambiguity:** If the user's message is unclear, nonsensical, or garbled, politely ask for clarification instead of guessing. For example: \"I'm sorry, I didn't quite catch that. Could you please rephrase your question?\"\n4.  **Structure Complex Answers:** For questions that require a detailed explanation, use bullet points or numbered lists to make the information easy to read.\n\n# User's Transcribed Message:\n\"{{ $json.output }}\"\n\n# Your Professional Response:",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        680,
+        220
+      ],
+      "id": "fe7c5836-db14-451b-a996-250523b635a2",
+      "name": "Response Gen"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Check if Voice Message": {
+      "main": [
+        [
+          {
+            "node": "Extract Voice Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Help Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Cleaning Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram Message": {
+      "main": [
+        [
+          {
+            "node": "Check if Voice Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Voice Message": {
+      "main": [
+        [
+          {
+            "node": "Download Voice Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Voice Message": {
+      "main": [
+        [
+          {
+            "node": "Convert .oga to .ogg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert .oga to .ogg": {
+      "main": [
+        [
+          {
+            "node": "Transcribe with Groq",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe with Groq": {
+      "main": [
+        [
+          {
+            "node": "Extract Transcribed Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Transcribed Text": {
+      "main": [
+        [
+          {
+            "node": "Cleaning Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleaning Agent": {
+      "main": [
+        [
+          {
+            "node": "Response Gen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Response Gen",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Gen": {
+      "main": [
+        [
+          {
+            "node": "Send Transcription",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "72edfa05-fc5c-4343-9be9-dd415ac00c11",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "01ff9519183080c8ca11e2f53a26a9bb8d6db974040ea61b5433dbf5d783bedf"
+  },
+  "id": "I6Yon573f5dJ3Def",
+  "tags": []
+}
